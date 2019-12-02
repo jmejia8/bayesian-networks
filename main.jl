@@ -1,5 +1,8 @@
 using RDatasets
 
+include("dicretize.jl")
+include("nets.jl")
+include("inference.jl")
 
 
 function classification()
