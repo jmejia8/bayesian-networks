@@ -14,13 +14,13 @@ function getNet(id, data)
 
     elseif id ==2
 
-        for i = 1:length(nams)
+        for i = 1:length(nams)-1
             add_edge!(g, i, length(nams))
         end
 
     elseif id ==3
 
-        for i = 1:length(nams)
+        for i = 1:length(nams)-1
             add_edge!(g, length(nams), i)
         end
 
