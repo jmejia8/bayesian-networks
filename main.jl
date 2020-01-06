@@ -4,6 +4,7 @@ include("nets.jl")
 include("structures.jl")
 include("discretize.jl")
 include("inference.jl")
+include("score.jl")
 
 
 function classification()
@@ -21,7 +22,7 @@ function classification()
     g = getNet(3, data_train)
 
     bn = BayesNet(;data = data_train, graph = g, class = :Species)
-
+    @show MDL(bn)
     C = collect(Set(bn.data[:, bn.class]))
 
     s = 0
