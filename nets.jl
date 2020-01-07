@@ -39,8 +39,6 @@ function genAcyclicNet(i, nvertices; debug=false)
 
     # @show x
 
-    @assert 0 < i < 2^(n+1)
-
     A = reshape(x[end-n:end], nvertices, nvertices)
 
     for k = 1:nvertices
@@ -57,6 +55,38 @@ function genAcyclicNet(i, nvertices; debug=false)
         return nothing
     end
     return g
+end
+
+function int_is_acyclic(i, nvertices)
+    x = parse.(Int, collect(bitstring(i)), base=10)
+    n =  nvertices^2 -1
+
+    A = reshape(x[end-n:end], nvertices, nvertices)
+
+    for k = 1:nvertices
+        if A[k,k] != 0
+            return false
+        end
+    end
+
+    g = SimpleDiGraph(A)
+
+    if is_cyclic(g)
+        return false
+    end
+
+    return true
+end
+
+function getDAGS(nvertices)
+    dags = Int[]
+    for i = 0:2:2^(nvertices^2)
+        if int_is_acyclic(i, nvertices)
+            push!(dags, i)        
+        end
+    end
+
+    return dags
 end
 
 # for i = 1:30

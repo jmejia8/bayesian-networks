@@ -1,16 +1,16 @@
-using RDatasets, PyPlot
+using RDatasets#, PyPlot
 import Random: randperm
 using Distributed, SharedArrays
-import CSV.write
+import CSV: write, read
 include("nets.jl")
 include("structures.jl")
 include("discretize.jl")
 include("inference.jl")
 include("score.jl")
 
-if nprocs() < Sys.CPU_THREADS - 1
-    addprocs(Sys.CPU_THREADS - 1)
-end
+# if nprocs() < Sys.CPU_THREADS - 1
+#     addprocs(Sys.CPU_THREADS - 1)
+# end
 
 
 function classification()
@@ -51,42 +51,46 @@ function classification()
 
 end
 
-function plotMDL()
-    iris = dataset("datasets", "iris")
-    data = discret_df(iris; nbins = 10)
-    n_instances = size(data, 1)
 
-    I = randperm(n_instances)
+function saveMDL(data)
+    score_likely = Float64[]
+    score_k = Float64[]
 
+    n = length(names(data))
 
-    data_train = copy(data)
+    dags = read("DAGS_$(n).csv")
 
-    score = SharedArray{Float64}(Float64[])
-    score_id = SharedArray{Int}(Int[])
-
-    n = length(names(data_train))
-
-    @sync @distributed for i = 1:300#2^(n^2)
+    for i = dags.dag
 
         g = genAcyclicNet(i, n)
         if isnothing(g)
             continue
         end
 
-        bn = BayesNet(;data = copy(data_train), graph = g, class = :Species)
-        mdl = MDL(bn)
-        println(i, " ", mdl)
+        bn = BayesNet(;data = copy(data), graph = g, class = :Species)
+        likely, k = MDL(bn; debug = true)
+        println(likely, " ", k)
         
-        push!(score,  mdl)
-        push!(score_id, i)
+        push!(score_likely,  likely)
+        push!(score_k, k)
     end
 
-    write("MDL_tmp.csv", DataFrame(:ind => Array(score_id), :MDL => Array(score)))
-
-    # display(score )
-    # plot(1:length(score), score, "bo")
+    write("MDL_iris.csv", DataFrame(:likelyhood => Array(score_likely), :k => Array(score_k)))
 
 
 end
 
-plotMDL()
+function saveDAGS(nvertices)
+    dags = getDAGS(nvertices)
+    write("DAGS_$(nvertices).csv", DataFrame(:dag => Array(dags)))
+end
+
+function main()
+    iris = dataset("datasets", "iris")
+    data = discret_df(iris; nbins = 10)
+    n_instances = size(data, 1)
+
+    saveMDL(data)
+end
+
+main()
