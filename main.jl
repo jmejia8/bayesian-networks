@@ -1,5 +1,6 @@
-using RDatasets
+using RDatasets, PyPlot
 import Random: randperm
+import CSV.write
 include("nets.jl")
 include("structures.jl")
 include("discretize.jl")
@@ -45,5 +46,41 @@ function classification()
 
 end
 
-@time classification()
+function plotMDL()
+    iris = dataset("datasets", "iris")
+    data = discret_df(iris; nbins = 10)
+    n_instances = size(data, 1)
 
+    I = randperm(n_instances)
+
+
+    data_train = copy(data)
+
+    score = Float64[]
+    score_id = Int[]
+    n = length(names(data_train))
+
+    for i = 1:300#2^(n^2)
+
+        g = genAcyclicNet(i, n)
+        if isnothing(g)
+            continue
+        end
+
+        bn = BayesNet(;data = copy(data_train), graph = g, class = :Species)
+        mdl = MDL(bn)
+        println(i, " ", mdl)
+        
+        push!(score,  mdl)
+        push!(score_id, i)
+    end
+
+    write("MDL_tmp.csv", DataFrame(:ind => score_id, :MDL => score))
+
+    # display(score )
+    # plot(1:length(score), score, "bo")
+
+
+end
+
+plotMDL()
