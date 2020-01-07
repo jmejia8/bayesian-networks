@@ -1,11 +1,16 @@
 using RDatasets, PyPlot
 import Random: randperm
+using Distributed, SharedArrays
 import CSV.write
 include("nets.jl")
 include("structures.jl")
 include("discretize.jl")
 include("inference.jl")
 include("score.jl")
+
+if nprocs() < Sys.CPU_THREADS - 1
+    addprocs(Sys.CPU_THREADS - 1)
+end
 
 
 function classification()
@@ -56,11 +61,12 @@ function plotMDL()
 
     data_train = copy(data)
 
-    score = Float64[]
-    score_id = Int[]
+    score = SharedArray{Float64}(Float64[])
+    score_id = SharedArray{Int}(Int[])
+
     n = length(names(data_train))
 
-    for i = 1:300#2^(n^2)
+    @sync @distributed for i = 1:300#2^(n^2)
 
         g = genAcyclicNet(i, n)
         if isnothing(g)
@@ -75,7 +81,7 @@ function plotMDL()
         push!(score_id, i)
     end
 
-    write("MDL_tmp.csv", DataFrame(:ind => score_id, :MDL => score))
+    write("MDL_tmp.csv", DataFrame(:ind => Array(score_id), :MDL => Array(score)))
 
     # display(score )
     # plot(1:length(score), score, "bo")

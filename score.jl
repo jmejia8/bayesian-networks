@@ -1,13 +1,12 @@
 function MDL(BN_model)
     fLogScore = 0.0
 
-    p = 1.0
     for i = 1:size(BN_model.data, 1)
         x = collect(BN_model.data[i, 1:end])
-        p *= P(x, BN_model)
+        p = P(x, BN_model)
+        fLogScore -= log(p)
     end
 
-    fLogScore = -log(p)
 
     for v in vertices(BN_model.graphInverted)
 
