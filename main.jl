@@ -52,7 +52,7 @@ function classification()
 end
 
 
-function saveMDL(data)
+function saveMDL(data; dataname="tmp")
     score_likely = Float64[]
     score_k = Float64[]
 
@@ -67,15 +67,15 @@ function saveMDL(data)
             continue
         end
 
-        bn = BayesNet(;data = copy(data), graph = g, class = :Species)
+        bn = BayesNet(;data = copy(data), graph = g)
         likely, k = MDL(bn; debug = true)
-        println(likely, " ", k)
+        println(i, " ", 100i/length(dags.dag), " ",likely, " ", k)
         
         push!(score_likely,  likely)
         push!(score_k, k)
     end
 
-    write("MDL_iris.csv", DataFrame(:likelyhood => Array(score_likely), :k => Array(score_k)))
+    write("MDL_$(dataname).csv", DataFrame(:likelyhood => Array(score_likely), :k => Array(score_k)))
 
 
 end
@@ -86,11 +86,35 @@ function saveDAGS(nvertices)
 end
 
 function main()
-    iris = dataset("datasets", "iris")
-    data = discret_df(iris; nbins = 10)
-    n_instances = size(data, 1)
+    # iris = dataset("datasets", "iris")
+    # data = discret_df(iris; nbins = 10)
+    # n_instances = size(data, 1)
 
-    saveMDL(data)
+    data_tables = [
+        "db1/caesarian4.csv",
+        "db2/car4.csv",
+        "db4/haberman4.csv",
+        "db5/hayes-roth4.csv",
+        "db6/transfusion4.csv",
+        "db8/data-user-model4.csv",
+        "db7/BM_10%6.csv",
+        # "db3/balance-scale5.csv",
+    ]
+
+
+    for filename = data_tables
+        println(filename)
+
+        data_ = read(filename)
+        data = discret_df(data_, nbins = 10)
+
+        out_name = replace(filename, "/" => "-")
+        saveMDL(data, dataname=out_name)
+
+    end
+
+
+    # saveMDL(data)
 end
 
 main()
